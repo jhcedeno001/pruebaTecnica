@@ -1,0 +1,2 @@
+export const SCORE_TOTAL_MAXIMO = 9
+export const PUNTOS_BUCKET_ECONOMICO_MAXIMO = 4

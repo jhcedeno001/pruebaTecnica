@@ -1,0 +1,448 @@
+openapi: 3.1.0
+info:
+  title: API Riesgo Proveedores
+  description: 'Panel de Riesgo de Proveedores Internacionales: evalua riesgo geopolitico y economico
+    por pais, con historial y comparacion entre paises.'
+  version: 0.1.0
+servers:
+- url: http://localhost:9541
+paths:
+  /supplier-risk/countries:
+    get:
+      tags:
+      - supplier-risk
+      summary: Listar Paises Guardados
+      operationId: listar_paises_guardados_supplier_risk_countries_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaisResumen'
+                title: Response Listar Paises Guardados Supplier Risk Countries Get
+  /supplier-risk/history:
+    get:
+      tags:
+      - supplier-risk
+      summary: Obtener Historial Consultas
+      operationId: obtener_historial_consultas_supplier_risk_history_get
+      parameters:
+      - name: limite
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 500
+          minimum: 1
+          default: 100
+          title: Limite
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistorialItem'
+                title: Response Obtener Historial Consultas Supplier Risk History Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /supplier-risk/compare:
+    get:
+      tags:
+      - supplier-risk
+      summary: Comparar Proveedores
+      description: 'Requiere al menos 2 codigos de pais separados por coma en el query param ''countries''
+        (ej: EC,CO,BR).'
+      operationId: comparar_proveedores_supplier_risk_compare_get
+      parameters:
+      - name: countries
+        in: query
+        required: true
+        schema:
+          type: string
+          title: Countries
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompareItem'
+                title: Response Comparar Proveedores Supplier Risk Compare Get
+        '400':
+          description: Se necesitan al menos 2 paises para comparar
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /supplier-risk/{country}:
+    get:
+      tags:
+      - supplier-risk
+      summary: Obtener Riesgo Proveedor
+      description: Busca por codigo ISO alpha-2/alpha-3. Si 'refresh' es true, vuelve a consultar countries.dev
+        en vez de usar los datos guardados.
+      operationId: obtener_riesgo_proveedor_supplier_risk__country__get
+      parameters:
+      - name: country
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Country
+      - name: refresh
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Refresh
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiesgoProveedorResponse'
+        '404':
+          description: No se encontro el pais con ese codigo
+        '503':
+          description: countries.dev no respondio
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    PaisInfo:
+      title: PaisInfo
+      type: object
+      properties:
+        nombre:
+          type: string
+          title: Nombre
+        alpha2:
+          type: string
+          title: Alpha2
+        alpha3:
+          type: string
+          title: Alpha3
+        region:
+          type: string
+          title: Region
+        subregion:
+          type: string
+          title: Subregion
+        poblacion:
+          type: integer
+          title: Poblacion
+        area:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Area
+        poblacion_densidad:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Poblacion Densidad
+        fronteras:
+          type: array
+          items:
+            type: string
+          title: Fronteras
+        moneda:
+          type: string
+          title: Moneda
+      required:
+      - nombre
+      - alpha2
+      - alpha3
+      - region
+      - subregion
+      - poblacion
+      - area
+      - poblacion_densidad
+      - fronteras
+      - moneda
+    FactorRiesgo:
+      title: FactorRiesgo
+      type: object
+      properties:
+        factor:
+          type: string
+          title: Factor
+        descripcion:
+          type: string
+          title: Descripcion
+        aplica:
+          type: boolean
+          title: Aplica
+        puntos:
+          type: integer
+          title: Puntos
+        detalle:
+          type: object
+          title: Detalle
+      required:
+      - factor
+      - descripcion
+      - aplica
+      - puntos
+      - detalle
+    RiesgoGeopolitico:
+      title: RiesgoGeopolitico
+      type: object
+      properties:
+        score_total:
+          type: integer
+          title: Score Total
+        score_maximo:
+          type: integer
+          title: Score Maximo
+        nivel:
+          type: string
+          title: Nivel
+        desglose:
+          type: array
+          items:
+            $ref: '#/components/schemas/FactorRiesgo'
+          title: Desglose
+      required:
+      - score_total
+      - score_maximo
+      - nivel
+      - desglose
+    IndicadorEconomico:
+      title: IndicadorEconomico
+      type: object
+      properties:
+        nombre:
+          type: string
+          title: Nombre
+        valor:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Valor
+        unidad:
+          type: string
+          title: Unidad
+        disponible:
+          type: boolean
+          title: Disponible
+        puntos:
+          type: number
+          title: Puntos
+        peso:
+          type: number
+          title: Peso
+        puntos_ponderados:
+          type: number
+          title: Puntos Ponderados
+      required:
+      - nombre
+      - valor
+      - unidad
+      - disponible
+      - puntos
+      - peso
+      - puntos_ponderados
+    RiesgoEconomico:
+      title: RiesgoEconomico
+      type: object
+      properties:
+        score:
+          type: number
+          title: Score
+        nivel:
+          type: string
+          title: Nivel
+        recomendacion:
+          type: string
+          title: Recomendacion
+        puntos_bucket:
+          type: integer
+          title: Puntos Bucket
+        indicadores:
+          type: array
+          items:
+            $ref: '#/components/schemas/IndicadorEconomico'
+          title: Indicadores
+      required:
+      - score
+      - nivel
+      - recomendacion
+      - puntos_bucket
+      - indicadores
+    RiesgoProveedorResponse:
+      title: RiesgoProveedorResponse
+      type: object
+      properties:
+        pais:
+          $ref: '#/components/schemas/PaisInfo'
+        riesgo_geopolitico:
+          $ref: '#/components/schemas/RiesgoGeopolitico'
+        riesgo_economico:
+          $ref: '#/components/schemas/RiesgoEconomico'
+        score_total:
+          type: integer
+          title: Score Total
+        nivel_combinado:
+          type: string
+          title: Nivel Combinado
+      required:
+      - pais
+      - riesgo_geopolitico
+      - riesgo_economico
+      - score_total
+      - nivel_combinado
+    HistorialItem:
+      title: HistorialItem
+      type: object
+      properties:
+        pais_alpha2:
+          type: string
+          title: Pais Alpha2
+        pais_alpha3:
+          type: string
+          title: Pais Alpha3
+        pais_nombre:
+          type: string
+          title: Pais Nombre
+        pais_bandera_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Pais Bandera Url
+        score_total:
+          type: integer
+          title: Score Total
+        nivel_combinado:
+          type: string
+          title: Nivel Combinado
+        consultado_en:
+          type: string
+          format: date-time
+          title: Consultado En
+      required:
+      - pais_alpha2
+      - pais_alpha3
+      - pais_nombre
+      - pais_bandera_url
+      - score_total
+      - nivel_combinado
+      - consultado_en
+    CompareItem:
+      title: CompareItem
+      type: object
+      properties:
+        codigo_solicitado:
+          type: string
+          title: Codigo Solicitado
+        ok:
+          type: boolean
+          title: Ok
+        error:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error
+          default: null
+        pais_nombre:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Pais Nombre
+          default: null
+        pais_alpha2:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Pais Alpha2
+          default: null
+        score_geopolitico:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Score Geopolitico
+          default: null
+        score_economico:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Score Economico
+          default: null
+        score_total:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Score Total
+          default: null
+        nivel_combinado:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Nivel Combinado
+          default: null
+      required:
+      - codigo_solicitado
+      - ok
+    PaisResumen:
+      title: PaisResumen
+      type: object
+      properties:
+        nombre:
+          type: string
+          title: Nombre
+        codigo_alfa2:
+          type: string
+          title: Codigo Alfa2
+      required:
+      - nombre
+      - codigo_alfa2
+    ValidationError:
+      title: ValidationError
+      type: object
+      properties:
+        loc:
+          type: array
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      required:
+      - loc
+      - msg
+      - type
+    HTTPValidationError:
+      title: HTTPValidationError
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          title: Detail

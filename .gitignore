@@ -1,0 +1,14 @@
+# Variables de entorno (secretos reales)
+.env
+
+# Editor / IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml

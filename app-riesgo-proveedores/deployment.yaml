@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-riesgo-proveedores
+  labels:
+    app: app-riesgo-proveedores
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app-riesgo-proveedores
+  template:
+    metadata:
+      labels:
+        app: app-riesgo-proveedores
+    spec:
+      containers:
+        - name: app-riesgo-proveedores
+          image: app-riesgo-proveedores:jhcedeno
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"

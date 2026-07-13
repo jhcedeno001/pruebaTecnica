@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-riesgo-proveedores
+  labels:
+    app: api-riesgo-proveedores
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api-riesgo-proveedores
+  template:
+    metadata:
+      labels:
+        app: api-riesgo-proveedores
+    spec:
+      containers:
+        - name: api-riesgo-proveedores
+          image: api-riesgo-proveedores:jhcedeno
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9541
+          env:
+            - name: APP_NAME
+              value: "API Riesgo Proveedores"
+            - name: DEBUG
+              value: "False"
+            - name: CORS_ORIGINS
+              value: '["http://app-riesgo-proveedores"]'
+            - name: DB_HOST
+              value: "postgres"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "riesgo_proveedores"
+            - name: DB_USER
+              value: "postgres"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: api-riesgo-proveedores-db
+                  key: DB_PASSWORD
+            - name: COUNTRIES_API_BASE_URL
+              value: "https://countries.dev"
+            - name: COUNTRIES_API_TIMEOUT_SECONDS
+              value: "50"
+            - name: EXCHANGE_RATE_PRIMARY_URL
+              value: "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@{version}/v1/currencies/usd.json"
+            - name: EXCHANGE_RATE_FALLBACK_URL
+              value: "https://{version}.currency-api.pages.dev/v1/currencies/usd.json"
+            - name: EXCHANGE_RATE_API_TIMEOUT_SECONDS
+              value: "50"
+            - name: GEO_REFERENCE_DATASET_URL
+              value: "https://cdn.jsdelivr.net/gh/mledoze/countries@master/dist/countries.json"
+            - name: GEO_REFERENCE_API_TIMEOUT_SECONDS
+              value: "50"
+            - name: CONFLICTS_DATASET_URL
+              value: "https://ourworldindata.org/grapher/locations-of-ongoing-armed-conflicts.csv?csvType=full&useColumnShortNames=true"
+            - name: CONFLICTS_API_TIMEOUT_SECONDS
+              value: "50"
+            - name: HTTP_BREAKER_FAIL_MAX
+              value: "5"
+            - name: HTTP_BREAKER_RESET_TIMEOUT_SECONDS
+              value: "30"
+            - name: HTTP_RATE_LIMIT_PER_SECOND
+              value: "5"
+          readinessProbe:
+            httpGet:
+              path: /openapi.json
+              port: 9541
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /openapi.json
+              port: 9541
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: api-riesgo-proveedores-db
+type: Opaque
+stringData:
+  DB_PASSWORD: "postgres123"
